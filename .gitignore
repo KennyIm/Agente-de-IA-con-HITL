@@ -1,0 +1,12 @@
+---#--- VARIABLES DE ENTORNO ---#---
+.env
+
+---#--- PYTHON ---#---
+__pycache__
+pycache/
+env/
+venv/
+db.sqlite3
+.db
+
+---#--- OTROS ---#---

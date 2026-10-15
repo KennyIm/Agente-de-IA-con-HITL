@@ -1,0 +1,288 @@
+{
+  "name": "MCP/Logistico",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "87736725-5408-4e26-9d54-525f7f006d5b",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "REQUIRES_APPROVAL",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "eea14970-0328-4071-bc6f-2139868a439b",
+      "name": "¿Requiere Aprobación?"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "aprobar-incidente",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        192
+      ],
+      "id": "da5a4dc5-2009-436f-9873-aade7d205938",
+      "name": "Webhook Aprobador",
+      "webhookId": "dbcdec86-3cfd-433b-af81-4f53a134ae23"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://incident-api:8000/api/v1/incidents/{{ $json.query.thread_id }}/resume",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"aprobado\": {{ $json.query.aprobado === 'true' }},\n  \"motivo\": \"{{ $json.query.motivo || 'Decisión enviada desde la alerta de supervisión' }}\",\n  \"token\": \"{{ $json.query.token }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        192
+      ],
+      "id": "c3f7be8e-eae5-4047-a0e1-f86d59a43854",
+      "name": "HTTP Reanudar Caso"
+    },
+    {
+      "parameters": {
+        "fromEmail": "xogar34658@copytosh.com",
+        "toEmail": "={{ $json.cliente_email }}",
+        "subject": "Resolución y compensación de su pedido",
+        "emailFormat": "text",
+        "text": "={{ $json.respuesta }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        192
+      ],
+      "id": "50d6e44a-52e7-4eb2-8fbf-2a573058f1c1",
+      "name": "Email al Cliente - Compensación Emitida",
+      "webhookId": "a15461a3-6fc7-4972-8358-8cffbc0d476a",
+      "credentials": {
+        "smtp": {
+          "id": "z617kcMsisQy0we7",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        },
+        "respondWith": "text",
+        "responseBody": "<html><body style=\"font-family: sans-serif; text-align: center; padding: 40px;\"><h2 style=\"color: #16a34a;\">✅ Transacción Procesada</h2><p>La decisión ha sido validada criptográficamente y registrada en el sistema.</p></body></html>"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        240
+      ],
+      "id": "1f8f4675-eecf-470e-9a4e-723268c73bfd",
+      "name": "Respuesta al Navegador"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reclamo-entrante",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "49502a77-aad1-48b0-9ad5-56a0de6b6a9f",
+      "name": "Webhook Ingesta",
+      "webhookId": "46f93950-2825-4e63-b4b9-572916bc8aff"
+    },
+    {
+      "parameters": {
+        "fromEmail": "xogar34658@copytosh.com",
+        "toEmail": "={{ $('Webhook Ingesta').item.json.body.cliente_email }}",
+        "subject": "Actualización de su reclamo logístico",
+        "emailFormat": "text",
+        "text": "={{ $json.respuesta }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        96
+      ],
+      "id": "33340f3e-3d70-4ddc-b778-68ade9d60b9e",
+      "name": "Email hacia el cliente",
+      "webhookId": "b601e8bd-93f2-48f2-a71f-b7757054f9cb",
+      "credentials": {
+        "smtp": {
+          "id": "z617kcMsisQy0we7",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "xogar34658@copytosh.com",
+        "toEmail": "akumetsukenny@gmail.com",
+        "subject": "🚨 Reclamo de Alto Valor PENDIENTE",
+        "emailFormat": "text",
+        "text": "=🚨 Reclamo de Alto Valor Detectado\n\n• Caso ID: {{ $json.thread_id }}\n• Acción requerida: {{ $json.accion_critica.nombre }}\n• Monto: ${{ $json.accion_critica.argumentos.monto }} USD\n• Motivo: {{ $json.accion_critica.argumentos.motivo }}\n\n✅ Para APROBAR la compensación:\nhttp://localhost:5678/webhook/aprobar-incidente?thread_id={{ $json.thread_id }}&aprobado=true&token={{ $json.token }}\n\n❌ Para RECHAZAR la compensación:\nhttp://localhost:5678/webhook/aprobar-incidente?thread_id={{ $json.thread_id }}&aprobado=false&token={{ $json.token }}&motivo=Sin_evidencia_fotografica_suficiente",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        -48
+      ],
+      "id": "404f600f-b622-4569-8acb-82c6b4bdd8c8",
+      "name": "Email hacia jefatura",
+      "webhookId": "643b0f37-6457-4752-afe6-6888fa059b46",
+      "credentials": {
+        "smtp": {
+          "id": "z617kcMsisQy0we7",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://incident-api:8000/api/v1/incidents/process",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mensaje\": \"{{ $json.body.mensaje }}\",\n  \"cliente_email\": \"{{ $json.body.cliente_email }}\",\n  \"thread_id\": \"{{ 'caso-' + $execution.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "70fc8663-9f4a-46b4-8e6b-74663e1f29fd",
+      "name": "HTTP API"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "¿Requiere Aprobación?": {
+      "main": [
+        [
+          {
+            "node": "Email hacia jefatura",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email hacia el cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Aprobador": {
+      "main": [
+        [
+          {
+            "node": "HTTP Reanudar Caso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Reanudar Caso": {
+      "main": [
+        [
+          {
+            "node": "Email al Cliente - Compensación Emitida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email al Cliente - Compensación Emitida": {
+      "main": [
+        [
+          {
+            "node": "Respuesta al Navegador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Ingesta": {
+      "main": [
+        [
+          {
+            "node": "HTTP API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP API": {
+      "main": [
+        [
+          {
+            "node": "¿Requiere Aprobación?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
