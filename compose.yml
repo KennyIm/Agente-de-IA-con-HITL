@@ -14,7 +14,9 @@ volumes:
 
 services:
   incident-api:
-    build: .
+    build:
+        context: .
+        dockerfile: mcp/langgraph-agent/Dockerfile
     container_name: incident_operations_api
     ports:
       - "8000:8000"

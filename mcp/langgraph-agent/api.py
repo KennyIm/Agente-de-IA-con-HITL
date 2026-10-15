@@ -5,11 +5,11 @@ import uuid
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 # Importamos la app compilada de LangGraph
 from graph import app
-load_dotenv()
+load_dotenv(find_dotenv())
 
 SECRET_KEY = os.getenv("HMAC_SECRET_KEY")
 

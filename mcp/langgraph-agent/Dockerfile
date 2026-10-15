@@ -14,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+WORKDIR /app/mcp/langgraph-agent
+
 EXPOSE 8000
 
 CMD ["uvicorn", "api:server", "--host", "0.0.0.0", "--port", "8000"]
